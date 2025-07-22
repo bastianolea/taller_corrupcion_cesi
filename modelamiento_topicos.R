@@ -11,7 +11,7 @@ palabras <- prensa %>%
   unnest_tokens(palabra, cuerpo, )
 
 eliminar <- c("2025", "lee", "julio", "si", "tras", "dos", "martes", "content", "https", "lunes", "media.biobiochile.cl", "uploads", "wp",
-              "c", "right", "top", "exante's", "ad", "server", "banner", "si", "dos", "us", "100", "00", "2024")
+              "c", "right", "top", "exante's", "ad", "server", "banner", "si", "dos", "us", "100", "00", "2024", 1:99)
 
 conteo <- palabras %>%
   filter(!palabra %in% stopwords::stopwords("es")) |> 
@@ -42,7 +42,8 @@ top_terminos |>
   select(-beta) |> 
   group_by(topic) |> 
   mutate(id = 1:n()) |> 
-  pivot_wider(names_from = topic, values_from = term)
+  pivot_wider(names_from = topic, values_from = term) |> 
+  select(-id)
 
 
 noticias_gamma <- tidy(noticias_lda, matrix = "gamma")
