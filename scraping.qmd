@@ -1,7 +1,12 @@
+
+```{r}
 library(rvest)
 library(dplyr)
+```
 
-# scraping de enlaces a noticias
+# Scraping de enlaces a noticias
+
+```{r}
 sitio <- "https://www.biobiochile.cl/lista/categorias/nacional" |>
   read_html()
 
@@ -15,19 +20,25 @@ enlaces <- titulos  |>
   html_attr("href")
 
 enlaces
+```
 
-# scraping de una noticia
+Scraping de una noticia
+```{r}
 enlace <- enlaces[1]
 
 pagina <- enlace |> 
   read_html()
+```
 
-# título
+Título
+```{r}
 titulo <- pagina |> 
   html_element(".post-title") |> 
   html_text2()
+```
 
-# fecha
+Fecha
+```{r}
 pagina |> 
   html_elements(".post-date") |> 
   html_text2()
@@ -35,23 +46,30 @@ pagina |>
 fecha <- enlace |> 
   stringr::str_extract("\\d{4}/\\d{2}/\\d{2}") |> 
   lubridate::as_date()
+```
 
-# cuerpo
+Cuerpo
+```{r}
 cuerpo <- pagina |> 
   html_elements(".container-redes-contenido") |> 
   html_text2() |> 
   paste(collapse = "\n")
+```
 
-
+Unir
+```{r}
 noticia <- tibble(titulo,
        fecha,
        cuerpo)
+```
+
+
+## Scraping de múltiples noticias
+
+```{r}
+library(purrr)
 
 enlaces2 <- enlaces[!is.na(enlaces)]
-
-
-# scraping de múltiples noticias
-library(purrr)
 
 noticias <- map(enlaces2, \(enlace) {
   
@@ -92,39 +110,57 @@ noticias2 <- noticias |>
   filter(!is.na(titulo))
 
 noticias2
+```
 
-# guardar
+guardar
+
+```{r}
 write.csv2(noticias2, "datos/noticias.csv")
+```
 
 
 
-# procesar ----
+## Procesar texto
+
+```{r}
 library(readr)
+```
 
-# cargar resultados del paso anterior
+Cargar resultados del paso anterior
+```{r}
 noticias <- read_csv2("datos/noticias.csv")
 
 
 noticias
 
 library(tidytext)
+```
 
-# tokenizar
+
+Tokenizar
+
+```{r}
 palabras <- noticias |> 
   unnest_tokens(output = "palabra",
                 input = cuerpo) 
 
 palabras
+```
 
-# tokenizar removiendo palabras vacías
+Tokenizar removiendo palabras vacías
+
+```{r}
 palabras <- noticias |> 
   unnest_tokens(output = "palabra",
                 input = cuerpo) |> 
   filter(!palabra %in% stopwords::stopwords("es"))
 
 palabras
+```
 
-# definir más palabras vacías
+### Limpiar texto
+
+```{r}
 eliminar <- c("así", "lee", "julio", "si", "tras", "dos", "martes", "content", "https", "lunes", "media.biobiochile.cl", "uploads", "wp", "bío")
 
 
@@ -137,27 +173,42 @@ noticias_2 <- noticias |>
          cuerpo_limpio = str_remove_all(cuerpo_limpio, "[[:digit:]]")) |> 
   mutate(cuerpo_limpio = str_trim(cuerpo_limpio))
   
-# tokenizar sobre texto limpio, removiendo palabras vacías, otras palabras, y símbolos
+```
+
+
+Tokenizar sobre texto limpio, removiendo palabras vacías, otras palabras, y símbolos
+
+```{r}
 palabras <- noticias_2 |> 
   unnest_tokens(output = "palabra",
                 input = cuerpo_limpio) |> 
   # eliminar palabras
   filter(!palabra %in% stopwords::stopwords("es"),
          !palabra %in% eliminar)
+```
 
+```{r}
 palabras |> 
   count(palabra, sort = TRUE) |> 
   print(n=30)
+```
 
+```{r}
 palabras |> 
   filter(palabra  == "jara") |> 
   distinct(titulo)
+```
 
+```{r}
 palabras |> 
   filter(palabra  == "kast") |> 
   distinct(titulo)
+```
 
+```{r}
 palabras |> 
   filter(palabra  == "fiscal") |> 
   distinct(titulo)
+```
+
 
