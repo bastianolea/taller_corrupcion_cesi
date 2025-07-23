@@ -7,14 +7,23 @@ library(tidytext)
 library(tictoc)
 
 # cargar datos ----
-prensa <- read_parquet("datos/prensa_corrupcion.parquet")
+noticias <- read_parquet("datos/noticias_corrupcion.parquet")
+
+# limpiar texto
+noticias_2 <- noticias |> 
+  mutate(cuerpo_limpio = str_to_lower(cuerpo)) |> 
+  # es mejor convertir a espacios que eliminar, porque así se separan de la anterior/siguiente palabra
+  mutate(cuerpo_limpio = str_remove_all(cuerpo_limpio, "[[:punct:]]"),
+         cuerpo_limpio = str_remove_all(cuerpo_limpio, "[[:digit:]]")) |> 
+  mutate(cuerpo_limpio = str_trim(cuerpo_limpio))
 
 
 # procesamiento de texto necesario para el modelamiento
 # en teoría no es necesario de usar, pero te genera los outputs necesarios para la siguiente función
-processed <- stm::textProcessor(documents = prensa$cuerpo,
-                                metadata = prensa,
-                                lowercase = T, removestopwords = T, removepunctuation = T, removenumbers = T, verbose = F,
+processed <- stm::textProcessor(documents = noticias_2$cuerpo,
+                                metadata = noticias_2,
+                                lowercase = F, removestopwords = T, 
+                                removepunctuation = F, removenumbers = F, verbose = F,
                                 stem = FALSE, 
                                 language = "spanish")
 
