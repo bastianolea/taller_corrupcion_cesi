@@ -1,3 +1,4 @@
+```{r}
 library(tidytext)
 library(stringr)
 library(tidyr)
@@ -5,8 +6,12 @@ library(arrow)
 library(dplyr)
 
 prensa <- read_parquet("datos/prensa_corrupcion.parquet")
+```
 
-# filtrar ----
+
+## filtrar 
+
+```{r}
 conceptos <- c("cohecho",
                "corrupción",
                "fraude al fisco",
@@ -21,18 +26,19 @@ conceptos <- c("cohecho",
                "estafa"
 )
 
-
-
 prensa_corrupcion <- prensa |> 
   mutate(tema = str_detect(cuerpo_limpio,
                            paste(conceptos, collapse = "|")))
+```
 
-
+```{r}
 prensa_corrupcion |> 
   filter(tema) |> 
   slice_sample(n = 10) |> 
   select(titulo)
+```
 
+```{r}
 library(ggplot2)
 
 prensa_corrupcion |> 
@@ -40,22 +46,23 @@ prensa_corrupcion |>
   ggplot() +
   aes(fecha, n, color = tema) +
   geom_line()
+```
 
+```{r}
 prensa_corrupcion |> 
   mutate(fecha = lubridate::floor_date(fecha, unit = "month")) |> 
   count(fecha, tema) |> 
   ggplot() +
   aes(fecha, n, color = tema) +
   geom_line()
+```
 
 
 
 
-# contar palabras ----
-prensa_corrupcion |> 
-  filter(tema)
+## contar palabras 
 
-
+```{r}
 palabras <- prensa_corrupcion |> 
   filter(tema) |> 
   unnest_tokens(output = "palabra",
@@ -63,26 +70,38 @@ palabras <- prensa_corrupcion |>
   filter(!palabra %in% stopwords::stopwords("es"))
 
 palabras
+```
 
+```{r}
 palabras |> 
   filter(palabra  == "fraude") |> 
   distinct(titulo)
+```
 
+```{r}
 palabras |> 
   filter(palabra  == "fundación") |> 
   distinct(titulo)
+```
 
+```{r}
 palabras |> 
   filter(palabra  == "hermosilla") |> 
   distinct(titulo)
+```
 
-# contar por fuente
+contar por fuente
+
+```{r}
 palabras |> 
   filter(palabra  == "hermosilla") |> 
   distinct(titulo, .keep_all = TRUE) |> 
   count(fuente, sort = TRUE)
+```
 
-# gráfico de términos ----
+## gráfico de términos 
+
+```{r}
 palabras |> 
   filter(palabra  == "hermosilla") |> 
   distinct(titulo, .keep_all = TRUE) |> 
@@ -91,7 +110,9 @@ palabras |>
   geom_density() +
   scale_x_date(date_breaks = "3 months",
                date_labels = "%m/%Y")
+```
 
+```{r}
 palabras |> 
   filter(palabra %in% c("hermosilla", "godoy", "jadue", "hassler", "barriga")) |> 
   distinct(titulo, .keep_all = TRUE) |> 
@@ -99,38 +120,44 @@ palabras |>
   aes(fecha, fill = palabra, color = palabra) +
   geom_density(alpha = 0.3) +
   scale_x_date(date_breaks = "3 months",
-               date_labels = "%m/%Y")
+               date_labels = "%m/%Y") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"))
+```
 
 
-# nubes de palabras ----
+## nubes de palabras 
+
+```{r}
 library(ggwordcloud)
 
 palabras_conteo <- palabras |> 
   count(palabra, sort = TRUE) |> 
   mutate(p = n/sum(n))
 
+personas <- c("hermosilla", "sauer", "jadue", "topelberg", "barriga", "hassler", "villalobos")
+delitos <- c("delitos", "fraude", "facturas", "estafa", "lavado", "cohecho", "indebida")
+
 palabras_conteo |> 
   filter(p > 0.001) |> 
   # crear variable que destaque palabras específicas
-  mutate(clave = ifelse(palabra %in% c("hermosilla", "sauer", "jadue", "topelberg",
-                                       "barriga", "hassler", "villalobos"),
+  mutate(clave = ifelse(palabra %in% delitos,
                         "clave", "otras")) |>
   ggplot() +
   aes(label = palabra, size = n, 
-      # mapear transparencia a la variable con palabras clave
-      alpha = clave) +
-  geom_text_wordcloud(shape = "circle",
-                      color = "#543A74",
-                      rm_outside = TRUE) +
+      color = clave) +
+  geom_text_wordcloud(shape = "circle", rm_outside = TRUE) +
   # especificar rango de tamaños
   scale_size_continuous(range = c(2, 8)) +
   # especificar nivel de transparencia de las palabras clave y de las demás
-  scale_alpha_manual(values = c("clave" = 1, "otras" = 0.6))
+  scale_color_manual(values = c("clave" = "coral3", "otras" = "black")) +
+  theme_void()
+```
 
 
-## por fuente ----
+### por fuente 
 
-
+```{r}
 palabras_fuente_conteo <- palabras |> 
   group_by(fuente) |> 
   count(palabra, sort = TRUE) |> 
@@ -156,38 +183,69 @@ palabras_fuente_conteo |>
   scale_alpha_manual(values = c("clave" = 1, "otras" = 0.6)) +
   facet_wrap(~fuente) +
   theme_minimal()
+```
 
 
 
-# correlación ----
+## correlación 
+
+```{r}
 library(widyr)
+```
 
-## por noticia ----
-palabras_noticia_conteo <- palabras |> 
-  group_by(titulo) |> 
-  count(palabra, sort = T) |> 
-  filter(n > 3)
+### por noticia 
 
-correlacion_noticias <- palabras_noticia_conteo |> 
-  ungroup() |> 
-  pairwise_cor(palabra, titulo, n)  |> 
+```{r}
+
+correlacion_noticias <- palabras |> 
+  add_count(palabra) |>
+  filter(n > 200) |>
+  pairwise_cor(palabra, titulo)  |> 
   filter(!is.na(correlation))
+```
 
-correlacion_noticias |> 
-  filter(abs(correlation) > 0.3)
-
+```{r}
 correlacion_noticias |> 
   filter(item1 == "hermosilla") |> 
-  filter(abs(correlation) > 0.2)
+  filter(abs(correlation) > 0.2) |> 
+  arrange(desc(correlation))
+```
 
+```{r}
 correlacion_noticias |> 
   filter(item1 == "barriga") |> 
-  filter(abs(correlation) > 0.1)
+  filter(abs(correlation) > 0.1) |> 
+  arrange(desc(correlation))
+```
 
 
-## por fuente ----
+```{r}
+correlacion_noticias |> 
+  filter(item1 %in% c("fraude", "hermosilla", "municipalidad", "fiscal", "cohecho", "fundaciones")) |> 
+  group_by(item1) |> 
+  slice_max(correlation, n = 10) |> 
+  ungroup() |> 
+  # mutate(item2 = forcats::fct_reorder(item2, correlation)) |> 
+  mutate(item2 = tidytext::reorder_within(item2, correlation, item1)) |>
+  ggplot() +
+  aes(correlation, item2, fill = item1) +
+  geom_col(width = 0.6) +
+  facet_wrap(~item1, scales = "free_y") +
+  guides(fill = "none") +
+  coord_cartesian(expand = FALSE) +
+  tidytext::scale_y_reordered() +
+  scale_fill_brewer(palette = "Dark2") +
+  theme_minimal()
+```
 
-# correlación por fuentes
+
+
+
+### por fuente 
+
+correlación por fuentes
+
+```{r}
 prensa_corrupcion |> distinct(fuente)
 
 fuentes <- c("24horas", 
@@ -206,19 +264,58 @@ correlacion_fuente <- map(fuentes,
                             
                             palabras |> 
                               filter(fuente == .fuente) |> 
-                              group_by(titulo) |> 
-                              count(palabra, sort = T) |> 
-                              filter(n > 3) |> 
-                              pairwise_cor(palabra, titulo, n) |> 
+                              add_count(palabra) |>
+                              filter(n > 20) |>
+                              pairwise_cor(palabra, titulo) |> 
                               filter(!is.na(correlation)) |> 
-                              mutate(fuente = .fuente) |> 
-                              filter(abs(correlation) > 0.2)
+                              mutate(fuente = .fuente)
+                              # filter(abs(correlation) > 0.2)
                           })
+```
 
+```{r}
 correlacion_fuente |> 
   list_rbind() |> 
+  filter(item1 == "hermosilla") |> 
+  filter(abs(correlation) > 0.2) |> 
+  group_by(fuente) |> 
+  slice_max(abs(correlation), n = 3) |> 
+  print(n = Inf)
+```
+
+```{r}
+correlacion_fuente |> 
+  list_rbind() |>
   filter(item1 == "barriga") |> 
   filter(abs(correlation) > 0.2) |> 
   group_by(fuente) |> 
   slice_max(abs(correlation), n = 3) |> 
   print(n = Inf)
+```
+
+
+```{r}
+correlacion_fuente |> 
+  list_rbind() |> 
+  filter(fuente %in% c("biobio", 
+             "cooperativa", 
+             "cnnchile",
+             "meganoticias",
+             "24horas", "ciper")) |> 
+  # filter(item1 %in% c("alcalde", "alcaldesa", "municipio", "municipalidad")) |> 
+  filter(item1 == "hermosilla") |> 
+  group_by(fuente) |> 
+  slice_max(correlation, n = 10, with_ties = F) |> 
+  ungroup() |> 
+  # mutate(item2 = forcats::fct_reorder(item2, correlation)) |> 
+  mutate(item2 = tidytext::reorder_within(item2, correlation, fuente)) |> 
+  ggplot() +
+  aes(correlation, item2, fill = fuente) +
+  geom_col(width = 0.6) +
+  facet_wrap(~fuente, scales = "free_y") +
+  guides(fill = "none") +
+  coord_cartesian(expand = FALSE) +
+  tidytext::scale_y_reordered() +
+  scale_fill_brewer(palette = "Dark2") +
+  theme_minimal()
+```

@@ -7,13 +7,13 @@ library(tidytext)
 library(tictoc)
 
 # cargar datos ----
-datos_prensa <- read_csv2("datos/prensa_datos_muestra.csv")
+prensa <- read_parquet("datos/prensa_corrupcion.parquet")
 
 
 # procesamiento de texto necesario para el modelamiento
 # en teoría no es necesario de usar, pero te genera los outputs necesarios para la siguiente función
-processed <- stm::textProcessor(documents = datos_prensa$cuerpo,
-                                metadata = datos_prensa,
+processed <- stm::textProcessor(documents = prensa$cuerpo,
+                                metadata = prensa,
                                 lowercase = T, removestopwords = T, removepunctuation = T, removenumbers = T, verbose = F,
                                 stem = FALSE, 
                                 language = "spanish")
@@ -26,7 +26,7 @@ out <- stm::prepDocuments(processed$documents, processed$vocab, processed$meta,
 tic()
 findingk_ver2 <- searchK(documents = out$documents,
                          vocab = out$vocab,
-                         K = c(10, 17, 18, 19, 20, 30), # probar cantidades de k
+                         K = c(17, 18, 19, 20), # probar cantidades de k
                          data = out$meta, 
                          cores = 4,
                          init.type = "Spectral")
@@ -36,7 +36,7 @@ plot(findingk_ver2)
 # maximizar coherencia y held-out likelihood, minimizar residuales
 
 # definir k en base a lo anterior
-.k = 19
+.k = 20
 
 
 # calcular modelo ----
@@ -47,7 +47,7 @@ modelo_stm <- stm(documents = out$documents,
                   max.em.its = 300, 
                   data = out$meta,
                   init.type = "Spectral")
-toc() # 120 segundos
+toc() # 191 segundos
 
 
 # plot(modelo_stm, n = 4)
@@ -72,7 +72,7 @@ modelo_stm$id <- ids_entrenamiento
 modelo_stm$out <- out 
 
 # guardar ----
-readr::write_rds(modelo_stm, "analisis/modelos/modelo_stm_8.rds")
+readr::write_rds(modelo_stm, "datos/modelo_stm.rds")
 
 # out$meta$id
 # names(modelo_stm)
