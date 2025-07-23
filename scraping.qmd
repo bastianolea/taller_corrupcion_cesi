@@ -1,3 +1,9 @@
+```{r}
+# install.packages("dplyr")
+# install.packages("rvest")
+# install.packages("stringr")
+# install.packages("lubridate")
+```
 
 ```{r}
 library(rvest)
@@ -105,17 +111,17 @@ noticias <- map(enlaces2, \(enlace) {
                     enlace)
 })
 
-noticias2 <- noticias |> 
+noticias_2 <- noticias |> 
   list_rbind() |> 
   filter(!is.na(titulo))
 
-noticias2
+noticias_2
 ```
 
 guardar
 
 ```{r}
-write.csv2(noticias2, "datos/noticias.csv")
+write.csv2(noticias_2, "datos/noticias.csv")
 ```
 
 
@@ -209,6 +215,32 @@ palabras |>
 palabras |> 
   filter(palabra  == "fiscal") |> 
   distinct(titulo)
+```
+
+
+
+
+# usar modelos de lenguaje ----
+```{r}
+# https://bastianolea.rbind.io/blog/resumir_texto_llm/
+
+library(mall)
+llm_use("ollama", "llama3.1:8b") # indicar qué modelo usaremos
+```
+
+Generar resumen de las noticias
+```{r}
+noticias_3 <- noticias_2 |> 
+   llm_summarize(cuerpo, # columna con el texto original
+                max_words = 20, # cantidad de palabras del resumen
+                pred_name = "resumen", # nombre de la columna resultante
+                additional_prompt = "resumen de noticia, en español"
+                )
+```
+
+```{r}
+noticias_3 |> 
+  select(resumen)
 ```
 
 

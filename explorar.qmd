@@ -1,4 +1,14 @@
 ```{r}
+# install.packages("dplyr")
+# install.packages("tidyr")
+# install.packages("stringr")
+# install.packages("tidytext")
+# install.packages("arrow")
+
+```
+
+
+```{r}
 library(tidytext)
 library(stringr)
 library(tidyr)
@@ -163,24 +173,25 @@ palabras_fuente_conteo <- palabras |>
   count(palabra, sort = TRUE) |> 
   mutate(p = n/sum(n))
 
+personas2 <- c("hermosilla", "sauer", "jadue", "topelberg", "jalaff",
+                                       "barriga", "hassler", "villalobos", "chadwick", 
+                                       "guerra", "vivanco")
+
 palabras_fuente_conteo |> 
   filter(fuente %in% c("24horas", "biobio", "cooperativa", "ciper")) |> 
   filter(p > 0.002) |> 
   # crear variable que destaque palabras específicas
-  mutate(clave = ifelse(palabra %in% c("hermosilla", "sauer", "jadue", "topelberg", "jalaff",
-                                       "barriga", "hassler", "villalobos", "chadwick", 
-                                       "guerra", "vivanco"),
+  mutate(clave = ifelse(palabra %in% personas2,
                         "clave", "otras")) |>
   ggplot() +
   aes(label = palabra, size = p, 
       # mapear transparencia a la variable con palabras clave
-      alpha = clave) +
+      color = clave) +
   geom_text_wordcloud(shape = "circle",
-                      color = "#543A74",
                       rm_outside = TRUE) +
   # especificar rango de tamaños
   scale_size_continuous(range = c(2, 8)) +
-  scale_alpha_manual(values = c("clave" = 1, "otras" = 0.6)) +
+  scale_color_manual(values = c("clave" = "coral3", "otras" = "black")) +
   facet_wrap(~fuente) +
   theme_minimal()
 ```
@@ -196,7 +207,6 @@ library(widyr)
 ### por noticia 
 
 ```{r}
-
 correlacion_noticias <- palabras |> 
   add_count(palabra) |>
   filter(n > 200) |>
