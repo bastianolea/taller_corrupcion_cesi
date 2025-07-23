@@ -1,6 +1,7 @@
 library(rvest)
 library(dplyr)
 
+# scraping de enlaces a noticias
 sitio <- "https://www.biobiochile.cl/lista/categorias/nacional" |>
   read_html()
 
@@ -15,6 +16,7 @@ enlaces <- titulos  |>
 
 enlaces
 
+# scraping de una noticia
 enlace <- enlaces[1]
 
 pagina <- enlace |> 
@@ -47,6 +49,8 @@ noticia <- tibble(titulo,
 
 enlaces2 <- enlaces[!is.na(enlaces)]
 
+
+# scraping de múltiples noticias
 library(purrr)
 
 noticias <- map(enlaces2, \(enlace) {
@@ -89,4 +93,5 @@ noticias2 <- noticias |>
 
 noticias2
 
+# guardar
 write.csv2(noticias2, "datos/noticias.csv")
