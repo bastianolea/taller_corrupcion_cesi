@@ -18,6 +18,10 @@ library(dplyr)
 prensa <- read_parquet("datos/prensa_corrupcion.parquet")
 ```
 
+```{r}
+prensa
+```
+
 
 ## filtrar 
 
@@ -39,6 +43,10 @@ conceptos <- c("cohecho",
 prensa_corrupcion <- prensa |> 
   mutate(tema = str_detect(cuerpo_limpio,
                            paste(conceptos, collapse = "|")))
+```
+
+```{r}
+prensa_corrupcion
 ```
 
 ```{r}
@@ -132,7 +140,10 @@ palabras |>
   scale_x_date(date_breaks = "3 months",
                date_labels = "%m/%Y") +
   theme_minimal() +
-  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"))
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"), name = "Concepto") +
+  theme(axis.text.y = element_blank(),
+        axis.title = element_blank()) +
+  labs(title = "Conceptos más frecuentes en noticias sobre corrupción")
 ```
 
 
@@ -151,7 +162,7 @@ delitos <- c("delitos", "fraude", "facturas", "estafa", "lavado", "cohecho", "in
 palabras_conteo |> 
   filter(p > 0.001) |> 
   # crear variable que destaque palabras específicas
-  mutate(clave = ifelse(palabra %in% delitos,
+  mutate(clave = ifelse(palabra %in% personas,
                         "clave", "otras")) |>
   ggplot() +
   aes(label = palabra, size = n, 
@@ -193,7 +204,8 @@ palabras_fuente_conteo |>
   scale_size_continuous(range = c(2, 8)) +
   scale_color_manual(values = c("clave" = "coral3", "otras" = "black")) +
   facet_wrap(~fuente) +
-  theme_minimal()
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
 ```
 
 

@@ -167,7 +167,7 @@ palabras
 ### Limpiar texto
 
 ```{r}
-eliminar <- c("así", "lee", "julio", "si", "tras", "dos", "martes", "content", "https", "lunes", "media.biobiochile.cl", "uploads", "wp", "bío")
+eliminar <- c("así", "pide", "lee", "julio", "si", "tras", "dos", "martes", "content", "https", "lunes", "media.biobiochile.cl", "uploads", "wp", "bío")
 
 
 library(stringr)
@@ -191,6 +191,8 @@ palabras <- noticias_2 |>
   # eliminar palabras
   filter(!palabra %in% stopwords::stopwords("es"),
          !palabra %in% eliminar)
+
+palabras
 ```
 
 ```{r}
@@ -216,6 +218,12 @@ palabras |>
   filter(palabra  == "fiscal") |> 
   distinct(titulo)
 ```
+```{r}
+palabras |> 
+  filter(palabra  == "corrupción") |> 
+  distinct(titulo)
+```
+
 
 
 
