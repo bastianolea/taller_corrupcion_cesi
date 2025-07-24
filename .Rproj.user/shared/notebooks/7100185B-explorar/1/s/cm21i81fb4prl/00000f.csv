@@ -1,0 +1,8 @@
+"0","palabras |> "
+"0","  filter(palabra  == ""hermosilla"") |> "
+"0","  distinct(titulo, .keep_all = TRUE) |> "
+"0","  ggplot() +"
+"0","  aes(fecha) +"
+"0","  geom_density() +"
+"0","  scale_x_date(date_breaks = ""3 months"","
+"0","               date_labels = ""%m/%Y"")"

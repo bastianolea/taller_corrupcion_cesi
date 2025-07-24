@@ -1,0 +1,343 @@
+```{r}
+# install.packages("dplyr")
+# install.packages("tidyr")
+# install.packages("stringr")
+# install.packages("tidytext")
+# install.packages("arrow")
+
+```
+
+
+```{r}
+library(tidytext)
+library(stringr)
+library(tidyr)
+library(arrow)
+library(dplyr)
+
+prensa <- read_parquet("datos/prensa_corrupcion.parquet")
+```
+
+```{r}
+prensa
+```
+
+
+## filtrar 
+
+```{r}
+conceptos <- c("cohecho",
+               "corrupción",
+               "fraude al fisco",
+               "soborno",
+               "horas extra",
+               "malversación",
+               "delitos tributarios",
+               "falsificación de instrumento",
+               "tráfico de influencias",
+               "negociación incompatible",
+               "administración desleal",
+               "estafa"
+)
+
+prensa_corrupcion <- prensa |> 
+  mutate(tema = str_detect(cuerpo_limpio,
+                           paste(conceptos, collapse = "|")))
+```
+
+```{r}
+prensa_corrupcion
+```
+
+```{r}
+prensa_corrupcion |> 
+  filter(tema) |> 
+  slice_sample(n = 10) |> 
+  select(titulo)
+```
+
+```{r}
+library(ggplot2)
+
+prensa_corrupcion |> 
+  count(fecha, tema) |> 
+  ggplot() +
+  aes(fecha, n, color = tema) +
+  geom_line()
+```
+
+```{r}
+prensa_corrupcion |> 
+  mutate(fecha = lubridate::floor_date(fecha, unit = "month")) |> 
+  count(fecha, tema) |> 
+  ggplot() +
+  aes(fecha, n, color = tema) +
+  geom_line()
+```
+
+
+
+
+## contar palabras 
+
+```{r}
+palabras <- prensa_corrupcion |> 
+  filter(tema) |> 
+  unnest_tokens(output = "palabra",
+                input = cuerpo_limpio) |> 
+  filter(!palabra %in% stopwords::stopwords("es"))
+
+palabras
+```
+
+```{r}
+palabras |> 
+  filter(palabra  == "fraude") |> 
+  distinct(titulo)
+```
+
+```{r}
+palabras |> 
+  filter(palabra  == "fundación") |> 
+  distinct(titulo)
+```
+
+```{r}
+palabras |> 
+  filter(palabra  == "hermosilla") |> 
+  distinct(titulo)
+```
+
+contar por fuente
+
+```{r}
+palabras |> 
+  filter(palabra  == "hermosilla") |> 
+  distinct(titulo, .keep_all = TRUE) |> 
+  count(fuente, sort = TRUE)
+```
+
+## gráfico de términos 
+
+```{r}
+palabras |> 
+  filter(palabra  == "hermosilla") |> 
+  distinct(titulo, .keep_all = TRUE) |> 
+  ggplot() +
+  aes(fecha) +
+  geom_density() +
+  scale_x_date(date_breaks = "3 months",
+               date_labels = "%m/%Y")
+```
+
+```{r}
+palabras |> 
+  filter(palabra %in% c("hermosilla", "godoy", "jadue", "hassler", "barriga")) |> 
+  distinct(titulo, .keep_all = TRUE) |> 
+  ggplot() +
+  aes(fecha, fill = palabra, color = palabra) +
+  geom_density(alpha = 0.3) +
+  scale_x_date(date_breaks = "3 months",
+               date_labels = "%m/%Y") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"), name = "Concepto") +
+  theme(axis.text.y = element_blank(),
+        axis.title = element_blank()) +
+  labs(title = "Conceptos más frecuentes en noticias sobre corrupción")
+```
+
+
+## nubes de palabras 
+
+```{r}
+library(ggwordcloud)
+
+palabras_conteo <- palabras |> 
+  count(palabra, sort = TRUE) |> 
+  mutate(p = n/sum(n))
+
+personas <- c("hermosilla", "sauer", "jadue", "topelberg", "barriga", "hassler", "villalobos")
+delitos <- c("delitos", "fraude", "facturas", "estafa", "lavado", "cohecho", "indebida")
+
+palabras_conteo |> 
+  filter(p > 0.001) |> 
+  # crear variable que destaque palabras específicas
+  mutate(clave = ifelse(palabra %in% personas,
+                        "clave", "otras")) |>
+  ggplot() +
+  aes(label = palabra, size = n, 
+      color = clave) +
+  geom_text_wordcloud(shape = "circle", rm_outside = TRUE) +
+  # especificar rango de tamaños
+  scale_size_continuous(range = c(2, 8)) +
+  # especificar nivel de transparencia de las palabras clave y de las demás
+  scale_color_manual(values = c("clave" = "coral3", "otras" = "black")) +
+  theme_void()
+```
+
+
+### por fuente 
+
+```{r}
+palabras_fuente_conteo <- palabras |> 
+  group_by(fuente) |> 
+  count(palabra, sort = TRUE) |> 
+  mutate(p = n/sum(n))
+
+personas2 <- c("hermosilla", "sauer", "jadue", "topelberg", "jalaff",
+                                       "barriga", "hassler", "villalobos", "chadwick", 
+                                       "guerra", "vivanco")
+
+palabras_fuente_conteo |> 
+  filter(fuente %in% c("24horas", "biobio", "cooperativa", "ciper")) |> 
+  filter(p > 0.002) |> 
+  # crear variable que destaque palabras específicas
+  mutate(clave = ifelse(palabra %in% personas2,
+                        "clave", "otras")) |>
+  ggplot() +
+  aes(label = palabra, size = p, 
+      # mapear transparencia a la variable con palabras clave
+      color = clave) +
+  geom_text_wordcloud(shape = "circle",
+                      rm_outside = TRUE) +
+  # especificar rango de tamaños
+  scale_size_continuous(range = c(2, 8)) +
+  scale_color_manual(values = c("clave" = "coral3", "otras" = "black")) +
+  facet_wrap(~fuente) +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
+```
+
+
+
+## correlación 
+
+```{r}
+library(widyr)
+```
+
+### por noticia 
+
+```{r}
+correlacion_noticias <- palabras |> 
+  add_count(palabra) |>
+  filter(n > 200) |>
+  pairwise_cor(palabra, titulo)  |> 
+  filter(!is.na(correlation))
+```
+
+```{r}
+correlacion_noticias |> 
+  filter(item1 == "hermosilla") |> 
+  filter(abs(correlation) > 0.2) |> 
+  arrange(desc(correlation))
+```
+
+```{r}
+correlacion_noticias |> 
+  filter(item1 == "barriga") |> 
+  filter(abs(correlation) > 0.1) |> 
+  arrange(desc(correlation))
+```
+
+
+```{r}
+correlacion_noticias |> 
+  filter(item1 %in% c("fraude", "hermosilla", "municipalidad", "fiscal", "cohecho", "fundaciones")) |> 
+  group_by(item1) |> 
+  slice_max(correlation, n = 10) |> 
+  ungroup() |> 
+  # mutate(item2 = forcats::fct_reorder(item2, correlation)) |> 
+  mutate(item2 = tidytext::reorder_within(item2, correlation, item1)) |>
+  ggplot() +
+  aes(correlation, item2, fill = item1) +
+  geom_col(width = 0.6) +
+  facet_wrap(~item1, scales = "free_y") +
+  guides(fill = "none") +
+  coord_cartesian(expand = FALSE) +
+  tidytext::scale_y_reordered() +
+  scale_fill_brewer(palette = "Dark2") +
+  theme_minimal()
+```
+
+
+
+
+### por fuente 
+
+correlación por fuentes
+
+```{r}
+prensa_corrupcion |> distinct(fuente)
+
+fuentes <- c("24horas", 
+             "biobio", 
+             "cooperativa", 
+             "ciper",
+             "cnnchile",
+             "meganoticias",
+             "t13")
+
+library(purrr)
+
+correlacion_fuente <- map(fuentes, 
+                          \(.fuente) {
+                            message("correlación ", .fuente)
+                            
+                            palabras |> 
+                              filter(fuente == .fuente) |> 
+                              add_count(palabra) |>
+                              filter(n > 20) |>
+                              pairwise_cor(palabra, titulo) |> 
+                              filter(!is.na(correlation)) |> 
+                              mutate(fuente = .fuente)
+                              # filter(abs(correlation) > 0.2)
+                          })
+```
+
+```{r}
+correlacion_fuente |> 
+  list_rbind() |> 
+  filter(item1 == "hermosilla") |> 
+  filter(abs(correlation) > 0.2) |> 
+  group_by(fuente) |> 
+  slice_max(abs(correlation), n = 3) |> 
+  print(n = Inf)
+```
+
+```{r}
+correlacion_fuente |> 
+  list_rbind() |>
+  filter(item1 == "barriga") |> 
+  filter(abs(correlation) > 0.2) |> 
+  group_by(fuente) |> 
+  slice_max(abs(correlation), n = 3) |> 
+  print(n = Inf)
+```
+
+
+```{r}
+correlacion_fuente |> 
+  list_rbind() |> 
+  filter(fuente %in% c("biobio", 
+             "cooperativa", 
+             "cnnchile",
+             "meganoticias",
+             "24horas", "ciper")) |> 
+  # filter(item1 %in% c("alcalde", "alcaldesa", "municipio", "municipalidad")) |> 
+  filter(item1 == "hermosilla") |> 
+  group_by(fuente) |> 
+  slice_max(correlation, n = 10, with_ties = F) |> 
+  ungroup() |> 
+  # mutate(item2 = forcats::fct_reorder(item2, correlation)) |> 
+  mutate(item2 = tidytext::reorder_within(item2, correlation, fuente)) |> 
+  ggplot() +
+  aes(correlation, item2, fill = fuente) +
+  geom_col(width = 0.6) +
+  facet_wrap(~fuente, scales = "free_y") +
+  guides(fill = "none") +
+  coord_cartesian(expand = FALSE) +
+  tidytext::scale_y_reordered() +
+  scale_fill_brewer(palette = "Dark2") +
+  theme_minimal()
+```

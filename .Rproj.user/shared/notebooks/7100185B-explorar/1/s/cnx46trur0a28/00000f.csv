@@ -1,0 +1,7 @@
+"0","palabras <- prensa_corrupcion |> "
+"0","  filter(tema) |> "
+"0","  unnest_tokens(output = ""palabra"","
+"0","                input = cuerpo_limpio) |> "
+"0","  filter(!palabra %in% stopwords::stopwords(""es""))"
+"0",""
+"0","palabras"

@@ -1,0 +1,7 @@
+"0","library(tidytext)"
+"0","library(stringr)"
+"0","library(tidyr)"
+"0","library(arrow)"
+"0","library(dplyr)"
+"0",""
+"0","prensa <- read_parquet(""datos/prensa_corrupcion.parquet"")"

@@ -1,0 +1,1 @@
+noticias <- read_parquet("datos/prensa_corrupcion_plus.parquet")

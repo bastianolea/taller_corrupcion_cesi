@@ -1,0 +1,5 @@
+"0","correlacion_noticias <- palabras |> "
+"0","  add_count(palabra) |>"
+"0","  filter(n > 200) |>"
+"0","  pairwise_cor(palabra, titulo)  |> "
+"0","  filter(!is.na(correlation))"

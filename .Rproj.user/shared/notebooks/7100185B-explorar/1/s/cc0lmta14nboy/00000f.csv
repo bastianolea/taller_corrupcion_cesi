@@ -1,0 +1,7 @@
+"0","correlacion_fuente |> "
+"0","  list_rbind() |>"
+"0","  filter(item1 == ""barriga"") |> "
+"0","  filter(abs(correlation) > 0.2) |> "
+"0","  group_by(fuente) |> "
+"0","  slice_max(abs(correlation), n = 3) |> "
+"0","  print(n = Inf)"

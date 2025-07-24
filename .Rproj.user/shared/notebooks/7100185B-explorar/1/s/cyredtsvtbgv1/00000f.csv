@@ -1,0 +1,4 @@
+"0","correlacion_noticias |> "
+"0","  filter(item1 == ""hermosilla"") |> "
+"0","  filter(abs(correlation) > 0.2) |> "
+"0","  arrange(desc(correlation))"

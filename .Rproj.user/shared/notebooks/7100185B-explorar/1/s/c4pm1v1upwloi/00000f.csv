@@ -1,0 +1,4 @@
+"0","prensa_corrupcion |> "
+"0","  filter(tema) |> "
+"0","  slice_sample(n = 10) |> "
+"0","  select(titulo)"

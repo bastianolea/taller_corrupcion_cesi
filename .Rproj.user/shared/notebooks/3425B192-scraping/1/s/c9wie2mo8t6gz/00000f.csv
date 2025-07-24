@@ -1,0 +1,4 @@
+"0","noticias <- read_csv2(""datos/noticias.csv"")"
+"0",""
+"0",""
+"0","noticias"

@@ -1,0 +1,6 @@
+"0","prensa_corrupcion |> "
+"0","  mutate(fecha = lubridate::floor_date(fecha, unit = ""month"")) |> "
+"0","  count(fecha, tema) |> "
+"0","  ggplot() +"
+"0","  aes(fecha, n, color = tema) +"
+"0","  geom_line()"

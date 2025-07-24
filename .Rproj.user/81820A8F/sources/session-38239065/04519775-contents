@@ -1,0 +1,1 @@
+read_csv2("datos/prensa_datos_muestra.csv")

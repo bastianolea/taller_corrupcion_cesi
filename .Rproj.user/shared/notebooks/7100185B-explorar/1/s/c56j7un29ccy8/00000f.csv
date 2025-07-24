@@ -1,0 +1,3 @@
+"0","palabras |> "
+"0","  filter(palabra  == ""fundación"") |> "
+"0","  distinct(titulo)"

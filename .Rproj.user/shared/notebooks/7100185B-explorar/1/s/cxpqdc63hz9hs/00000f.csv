@@ -1,0 +1,7 @@
+"0","library(ggplot2)"
+"0",""
+"0","prensa_corrupcion |> "
+"0","  count(fecha, tema) |> "
+"0","  ggplot() +"
+"0","  aes(fecha, n, color = tema) +"
+"0","  geom_line()"

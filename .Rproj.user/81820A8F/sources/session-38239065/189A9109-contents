@@ -1,0 +1,95 @@
+
+library(rvest) # web scraping
+
+direccion <- "https://www.biobiochile.cl/lista/categorias/nacional"
+
+
+sitio <- direccion |> read_html()
+
+sitio
+
+titulos <- sitio |> 
+  html_elements(".article-text-container")
+
+titulos |> html_text2()
+
+enlaces <- titulos |> 
+  html_element("a") |> 
+  html_attr("href")
+
+enlaces
+
+
+enlace <- enlaces[7]
+
+
+pagina <- enlace |> 
+  read_html()
+
+titulo <- pagina |> 
+  html_element(".post-title") |> 
+  html_text2()
+
+cuerpo <- pagina |> 
+  html_elements(".container-redes-contenido") |> 
+  html_text2() |> 
+  paste(collapse = "\n")
+
+fecha <- enlace |> 
+  stringr::str_extract("\\d{4}/\\d{2}/\\d{2}") |> # regex
+  lubridate::as_date()
+
+library(dplyr)
+
+noticia <- tibble(titulo,
+cuerpo,
+fecha,
+enlace)
+
+noticia
+
+library(purrr)
+
+enlaces2 <- enlaces[!is.na(enlaces)]
+
+
+noticias <- map(enlaces2, \(enlace) {
+  message(enlace)
+  
+  pagina <- enlace |> 
+    read_html()
+  
+  Sys.sleep(0.2)
+  
+  # título
+  titulo <- pagina |> 
+    html_element(".post-title") |> 
+    html_text2()
+  
+  # fecha
+  pagina |> 
+    html_elements(".post-date") |> 
+    html_text2()
+  
+  fecha <- enlace |> 
+    stringr::str_extract("\\d{4}/\\d{2}/\\d{2}") |> 
+    lubridate::as_date()
+  
+  # cuerpo
+  cuerpo <- pagina |> 
+    html_elements(".container-redes-contenido") |> 
+    html_text2() |> 
+    paste(collapse = "\n")
+  
+  
+  noticia <- tibble(titulo,
+                    fecha,
+                    cuerpo,
+                    enlace)
+})
+
+noticias_2 <- noticias |> 
+  list_rbind() |> 
+  filter(!is.na(titulo))
+
+noticias_2

@@ -1,0 +1,4 @@
+convertr::r_to_qmd(
+  input_dir = "explorar.R",
+  output_dir = "explorar.qmd"
+)
