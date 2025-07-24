@@ -28,8 +28,9 @@ En este repositorio está todo el código usado en el taller.
 ## Datos
 
 - Datos de prensa chilena: https://github.com/bastianolea/prensa_chile
+- Datos obtenidos en ejemplo de web scraping: `datos/noticias.csv`
 - Base de datos con noticias de corrupción (6.000 noticias), desde 2023 a julio de 2025: `datos/prensa_corrupcion.parquet`
-- Base de datos con muestra de 10.000 noticias chilenas (al azar) de toda temática del año 2024: `datos/prensa_datos_muestra.csv`
+- Base de datos con muestra de noticias chilenas (10.000, al azar) de toda temática del año 2024: `datos/prensa_datos_muestra.csv`
 
 
 ## Gráficos
